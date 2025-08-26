@@ -58,9 +58,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, featured = false }) => {
           style={{ 
             fontSize: featured ? '1.25rem' : '1rem',
             lineHeight: '1.4',
-            display: '-webkit-box',
+            display: '-webkit-box' as const,
             WebkitLineClamp: featured ? 2 : 3,
-            WebkitBoxOrient: 'vertical',
+            WebkitBoxOrient: 'vertical' as const,
             overflow: 'hidden'
           }}
         >
@@ -71,9 +71,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, featured = false }) => {
           <Card.Text 
             className="text-muted mt-2"
             style={{
-              display: '-webkit-box',
+              display: '-webkit-box' as const,
               WebkitLineClamp: featured ? 3 : 2,
-              WebkitBoxOrient: 'vertical',
+              WebkitBoxOrient: 'vertical' as const,
               overflow: 'hidden',
               lineHeight: '1.5'
             }}

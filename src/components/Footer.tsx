@@ -34,18 +34,18 @@ const Footer: React.FC = () => {
             </ul>
             
             <div className="mt-3">
-              <a href="#" className="text-muted me-3">
+              <button className="btn btn-link text-muted p-0 me-3" style={{ textDecoration: 'none' }}>
                 <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="#" className="text-muted me-3">
+              </button>
+              <button className="btn btn-link text-muted p-0 me-3" style={{ textDecoration: 'none' }}>
                 <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#" className="text-muted me-3">
+              </button>
+              <button className="btn btn-link text-muted p-0 me-3" style={{ textDecoration: 'none' }}>
                 <i className="fab fa-youtube"></i>
-              </a>
-              <a href="#" className="text-muted">
+              </button>
+              <button className="btn btn-link text-muted p-0" style={{ textDecoration: 'none' }}>
                 <i className="fab fa-instagram"></i>
-              </a>
+              </button>
             </div>
           </Col>
         </Row>

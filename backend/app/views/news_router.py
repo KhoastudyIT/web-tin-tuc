@@ -56,7 +56,7 @@ async def get_news_by_id(news_id: int, db: Session = Depends(get_db)):
     
     return news
 
-@auth_router.post("/", response_model=NewsItemResponse, status_code=status.HTTP_201_CREATED)
+@news_router.post("/", response_model=NewsItemResponse, status_code=status.HTTP_201_CREATED)
 async def create_news(
     news: NewsItemCreate,
     db: Session = Depends(get_db),
@@ -68,7 +68,7 @@ async def create_news(
     
     return news_service.create_news(db, news)
 
-@auth_router.put("/{news_id}", response_model=NewsItemResponse)
+@news_router.put("/{news_id}", response_model=NewsItemResponse)
 async def update_news(
     news_id: int,
     news_update: NewsItemUpdate,

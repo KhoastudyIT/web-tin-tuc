@@ -1,40 +1,17 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Breadcrumb } from 'react-bootstrap';
-import { useQuery } from 'react-query';
-import { newsService } from '../services/newsService';
+import { mockDataService } from '../services/mockDataService';
 import NewsCard from '../components/NewsCard';
 import { Link } from 'react-router-dom';
 
 const CategoryPage: React.FC = () => {
   const { category } = useParams<{ category: string }>();
 
-  const { data: news = [], isLoading } = useQuery(
-    ['category-news', category],
-    () => newsService.getNewsByCategory(category!, 20),
-    {
-      enabled: !!category,
-    }
-  );
-
-  const { data: categories = [] } = useQuery(
-    'categories',
-    () => newsService.getCategories()
-  );
-
+  // Lấy dữ liệu từ mock data
+  const news = category ? mockDataService.getNewsByCategory(category, 20) : [];
+  const categories = mockDataService.getAllCategories();
   const currentCategory = categories.find(cat => cat.slug === category);
-
-  if (isLoading) {
-    return (
-      <Container className="py-5">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Đang tải...</span>
-          </div>
-        </div>
-      </Container>
-    );
-  }
 
   return (
     <Container className="py-4">

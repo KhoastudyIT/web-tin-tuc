@@ -3,10 +3,24 @@ import { Container, Row, Col, Card, Table, Button, Badge, Alert } from 'react-bo
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { newsService } from '../services/newsService';
-import { authService } from '../services/authService';
+
 
 const AdminPage: React.FC = () => {
   const { user } = useAuth();
+
+  // Lấy danh sách tin tức
+  const { data: news = [], isLoading: newsLoading } = useQuery(
+    'admin-news',
+    () => newsService.getNews(undefined, 50, 0),
+    { enabled: !!user?.is_admin }
+  );
+
+  // Lấy danh sách danh mục
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery(
+    'admin-categories',
+    () => newsService.getCategories(),
+    { enabled: !!user?.is_admin }
+  );
 
   // Kiểm tra quyền admin
   if (!user || !user.is_admin) {
@@ -19,18 +33,6 @@ const AdminPage: React.FC = () => {
       </Container>
     );
   }
-
-  // Lấy danh sách tin tức
-  const { data: news = [], isLoading: newsLoading } = useQuery(
-    'admin-news',
-    () => newsService.getNews(undefined, 50, 0)
-  );
-
-  // Lấy danh sách danh mục
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery(
-    'admin-categories',
-    () => newsService.getCategories()
-  );
 
   if (newsLoading || categoriesLoading) {
     return (

@@ -1,30 +1,16 @@
 import React from 'react';
 import { Container, Row, Col, Card, Badge } from 'react-bootstrap';
-import { useQuery } from 'react-query';
-import { newsService } from '../services/newsService';
+import { mockDataService } from '../services/mockDataService';
 import { NewsItemList } from '../types/news';
 import NewsCard from '../components/NewsCard';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 const HomePage: React.FC = () => {
-  // Lấy tin tức nổi bật
-  const { data: featuredNews = [], isLoading: featuredLoading } = useQuery<NewsItemList[]>(
-    'featured-news',
-    () => newsService.getFeaturedNews(5)
-  );
-
-  // Lấy tin tức mới nhất
-  const { data: latestNews = [], isLoading: latestLoading } = useQuery<NewsItemList[]>(
-    'latest-news',
-    () => newsService.getLatestNews(10)
-  );
-
-  // Lấy tin tức phổ biến
-  const { data: popularNews = [], isLoading: popularLoading } = useQuery<NewsItemList[]>(
-    'popular-news',
-    () => newsService.getPopularNews(5)
-  );
+  // Lấy tin tức từ mock data
+  const featuredNews = mockDataService.getFeaturedNews(5);
+  const latestNews = mockDataService.getLatestNews(10);
+  const popularNews = mockDataService.getPopularNews(5);
 
   const formatDate = (dateString: string) => {
     try {
@@ -36,18 +22,6 @@ const HomePage: React.FC = () => {
       return 'Vừa xong';
     }
   };
-
-  if (featuredLoading || latestLoading || popularLoading) {
-    return (
-      <Container className="py-5">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Đang tải...</span>
-          </div>
-        </div>
-      </Container>
-    );
-  }
 
   return (
     <Container className="py-4">

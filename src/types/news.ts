@@ -13,15 +13,15 @@ export interface NewsItem {
   title: string;
   slug: string;
   summary?: string;
-  content: string;
+  content?: string;
   image_url?: string;
   author?: string;
   source?: string;
-  category_id: number;
+  category_id?: number;
   is_featured: boolean;
   is_published: boolean;
   views_count: number;
-  likes_count: number;
+  likes_count?: number;
   created_at: string;
   updated_at?: string;
   category: NewsCategory;
@@ -35,6 +35,8 @@ export interface NewsItemList {
   image_url?: string;
   author?: string;
   category: NewsCategory;
+  is_featured: boolean;
+  is_published: boolean;
   views_count: number;
   created_at: string;
 }

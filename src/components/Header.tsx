@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Form, Button, NavDropdown } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
-import { newsService } from '../services/newsService';
+import { mockDataService } from '../services/mockDataService';
 import { NewsCategory } from '../types/news';
-import { useQuery } from 'react-query';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Lấy danh mục tin tức
-  const { data: categories = [] } = useQuery<NewsCategory[]>(
-    'categories',
-    () => newsService.getCategories()
-  );
+  // Lấy danh mục tin tức từ mock data
+  const categories = mockDataService.getAllCategories();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +44,7 @@ const Header: React.FC = () => {
             <Nav.Link as={Link} to="/">Trang chủ</Nav.Link>
             
             <NavDropdown title="Danh mục" id="categories-dropdown">
-              {categories.map((category) => (
+              {categories.map((category: NewsCategory) => (
                 <NavDropdown.Item 
                   key={category.id} 
                   as={Link} 

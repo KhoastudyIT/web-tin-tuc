@@ -4,7 +4,7 @@ import { NewsItem, NewsItemList, NewsCategory, NewsItemCreate, NewsItemUpdate } 
 export const newsService = {
   // Lấy danh sách tin tức
   getNews: async (category?: string, limit: number = 20, offset: number = 0): Promise<NewsItemList[]> => {
-    const params = { limit, offset };
+    const params: any = { limit, offset };
     if (category) params.category = category;
     
     const response = await api.get('/api/news', { params });

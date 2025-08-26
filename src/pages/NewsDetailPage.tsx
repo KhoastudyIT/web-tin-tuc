@@ -1,35 +1,18 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Breadcrumb } from 'react-bootstrap';
-import { useQuery } from 'react-query';
-import { newsService } from '../services/newsService';
+import { mockDataService } from '../services/mockDataService';
+import { NewsItem } from '../types/news';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 const NewsDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
-  const { data: news, isLoading, error } = useQuery(
-    ['news', slug],
-    () => newsService.getNewsBySlug(slug!),
-    {
-      enabled: !!slug,
-    }
-  );
+  // Lấy tin tức từ mock data
+  const news = slug ? mockDataService.getNewsBySlug(slug) : undefined;
 
-  if (isLoading) {
-    return (
-      <Container className="py-5">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Đang tải...</span>
-          </div>
-        </div>
-      </Container>
-    );
-  }
-
-  if (error || !news) {
+  if (!news) {
     return (
       <Container className="py-5">
         <div className="text-center">
@@ -102,10 +85,12 @@ const NewsDetailPage: React.FC = () => {
                 </span>
               </div>
               
-              <div className="d-flex justify-content-between align-items-center text-muted small">
-                <span>👁️ {news.views_count} lượt xem</span>
-                <span>❤️ {news.likes_count} lượt thích</span>
-              </div>
+                             <div className="d-flex justify-content-between align-items-center text-muted small">
+                 <span>👁️ {news.views_count} lượt xem</span>
+                 {news.likes_count && (
+                   <span>❤️ {news.likes_count} lượt thích</span>
+                 )}
+               </div>
             </header>
 
             {/* Hình ảnh */}
@@ -120,13 +105,20 @@ const NewsDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* Nội dung */}
-            <div className="news-content mb-4">
-              <div 
-                dangerouslySetInnerHTML={{ __html: news.content }}
-                className="lh-lg"
-              />
-            </div>
+                         {/* Nội dung */}
+             {news.content ? (
+               <div className="news-content mb-4">
+                 <div 
+                   dangerouslySetInnerHTML={{ __html: news.content }}
+                   className="lh-lg"
+                 />
+               </div>
+             ) : (
+               <div className="news-content mb-4">
+                 <p className="lead">{news.summary}</p>
+                 <p className="text-muted">Nội dung chi tiết đang được cập nhật...</p>
+               </div>
+             )}
 
             {/* Nguồn */}
             {news.source && (
