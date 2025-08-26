@@ -3,10 +3,10 @@ import { Card, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { NewsItemList } from '../types/news';
+import { NewsItem } from '../types/news';
 
 interface NewsCardProps {
-  news: NewsItemList;
+  news: NewsItem;
   featured?: boolean;
 }
 
