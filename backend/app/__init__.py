@@ -4,9 +4,6 @@ from .config import settings
 from .database import engine
 from .models import Base
 
-# Tạo database tables
-Base.metadata.create_all(bind=engine)
-
 def create_app() -> FastAPI:
     """Factory function để tạo FastAPI app"""
     
@@ -41,5 +38,10 @@ def create_app() -> FastAPI:
             "version": settings.APP_VERSION,
             "docs": "/docs"
         }
+    
+    # Tạo database tables khi app khởi động
+    @app.on_event("startup")
+    async def startup_event():
+        Base.metadata.create_all(bind=engine)
     
     return app

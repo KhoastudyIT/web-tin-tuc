@@ -1,33 +1,47 @@
 {
+  // ===== COMPILER OPTIONS - Cấu hình TypeScript compiler =====
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es6"
+    // ===== TARGET & LIB - Phiên bản JavaScript và thư viện hỗ trợ =====
+    "target": "es5",                      // Biên dịch ra JavaScript ES5 (tương thích cũ)
+    "lib": [                              // Các thư viện JavaScript được hỗ trợ
+      "dom",                              // DOM API (document, window, etc.)
+      "dom.iterable",                     // DOM iterable (for...of với DOM elements)
+      "es6"                               // ES6 features (arrow functions, classes, etc.)
     ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "baseUrl": "src",
-    "paths": {
-      "@/*": ["*"]
+    
+    // ===== COMPATIBILITY - Tương thích với JavaScript =====
+    "allowJs": true,                      // Cho phép biên dịch cả file .js và .ts
+    "skipLibCheck": true,                 // Bỏ qua kiểm tra type của thư viện bên ngoài
+    "esModuleInterop": true,              // Cho phép import/export ES modules
+    "allowSyntheticDefaultImports": true, // Cho phép import default từ module không có default
+    
+    // ===== STRICT MODE - Kiểm tra nghiêm ngặt =====
+    "strict": true,                       // Bật tất cả strict type checking
+    "forceConsistentCasingInFileNames": true, // Bắt buộc tên file nhất quán (case-sensitive)
+    "noFallthroughCasesInSwitch": true,   // Báo lỗi nếu switch case thiếu break
+    
+    // ===== MODULE SYSTEM - Hệ thống module =====
+    "module": "esnext",                   // Sử dụng ES modules (import/export)
+    "moduleResolution": "node",            // Giải quyết module theo cách của Node.js
+    "resolveJsonModule": true,             // Cho phép import file JSON
+    "isolatedModules": true,              // Mỗi file được biên dịch độc lập
+    
+    // ===== OUTPUT & JSX =====
+    "noEmit": true,                       // Không tạo file output (React Scripts sẽ làm)
+    "jsx": "react-jsx",                   // Sử dụng JSX transform mới của React 17+
+    
+    // ===== PATH MAPPING - Đường dẫn tương đối =====
+    "baseUrl": "src",                     // Thư mục gốc để resolve import
+    "paths": {                            // Map đường dẫn ngắn gọn
+      "@/*": ["*"]                        // @/ sẽ trỏ đến src/
     }
   },
-  "include": [
-    "src"
+  
+  // ===== INCLUDE/EXCLUDE - File nào được biên dịch =====
+  "include": [                            // Chỉ định file nào được TypeScript xử lý
+    "src"                                 // Tất cả file trong thư mục src/
   ],
-  "exclude": [
-    "node_modules"
+  "exclude": [                            // File nào bị loại trừ
+    "node_modules"                        // Không xử lý thư mục node_modules
   ]
 }

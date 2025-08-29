@@ -2,17 +2,29 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
 from ..database import get_db
 from ..services.user_service import UserService
 from ..schemas.auth import TokenData
 from ..config import settings
 
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 # Tạo service instance
 user_service = UserService()
+
+def get_password_hash(password: str) -> str:
+    """Hash password"""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password"""
+    return pwd_context.verify(plain_password, hashed_password)
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
