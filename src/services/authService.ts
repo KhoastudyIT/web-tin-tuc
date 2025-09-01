@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 import { User, UserCreate, UserLogin, UserUpdate } from '../types/user';
 
 export const authService = {
@@ -10,11 +11,24 @@ export const authService = {
 
   // Đăng nhập
   loginUser: async (email: string, password: string): Promise<{ access_token: string; user: User }> => {
-    const response = await api.post('/api/auth/login', { email, password });
-    // Backend trả về { access_token, token_type }, cần lấy user từ /me
-    const userResponse = await api.get('/api/auth/me');
+    // Bước 1: Đăng nhập để lấy token
+    const loginResponse = await api.post('/api/auth/login', { email, password });
+    
+    const accessToken = loginResponse.data.access_token;
+    if (!accessToken) {
+      throw new Error('No access token received from server');
+    }
+    
+    // Bước 2: Sử dụng token để lấy thông tin user
+    const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
     return {
-      access_token: response.data.access_token,
+      access_token: accessToken,
       user: userResponse.data
     };
   },

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
-    """Cấu hình ứng dụng - Sử dụng os.getenv trực tiếp"""
+    """Cấu hình ứng dụng - Sử dụng PyMySQL"""
     
     def __init__(self):
         # App settings
@@ -14,8 +14,8 @@ class Settings:
         self.APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "Modern news website backend with MVC pattern")
         self.APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
         
-        # Database - MySQL với phpMyAdmin
-        self.DATABASE_URL = os.getenv("DATABASE_URL", "mysql://root:@localhost:3306/news_website")
+        # Database - MySQL với PyMySQL
+        self.DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:@localhost:3306/news_website")
         
         # MySQL specific settings
         self.MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")

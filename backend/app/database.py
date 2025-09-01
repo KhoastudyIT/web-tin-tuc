@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from .config import settings
 
-# Tạo database engine cho MySQL với phpMyAdmin
+# Tạo database engine cho MySQL với PyMySQL
 engine = create_engine(
     settings.DATABASE_URL,
     # MySQL specific parameters
@@ -40,7 +40,8 @@ def test_connection():
     """Test kết nối database"""
     try:
         with engine.connect() as connection:
-            result = connection.execute("SELECT 1")
+            from sqlalchemy import text
+            result = connection.execute(text("SELECT 1"))
             return True
     except Exception as e:
         print(f"Database connection error: {e}")

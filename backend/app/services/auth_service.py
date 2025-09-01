@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -26,9 +26,9 @@ class AuthService:
         """Tạo JWT access token"""
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -42,6 +42,17 @@ class AuthService:
         if not self.verify_password(password, user.hashed_password):
             return None
         return user
+    
+    def get_user_by_email(self, db: Session, email: str) -> Optional[User]:
+        """Lấy user theo email"""
+        return db.query(User).filter(User.email == email).first()
+    
+    def update_last_login(self, db: Session, user_id: int) -> None:
+        """Cập nhật thời gian đăng nhập cuối"""
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.last_login = datetime.now(timezone.utc)
+            db.commit()
     
     def create_user(self, db: Session, user: UserCreate) -> User:
         """Tạo người dùng mới"""

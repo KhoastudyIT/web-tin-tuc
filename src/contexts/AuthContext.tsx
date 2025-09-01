@@ -60,7 +60,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Đăng nhập thành công!');
       return true;
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || error.message || 'Đăng nhập thất bại!');
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Đăng nhập thất bại!';
+      toast.error(errorMessage);
       return false;
     }
   };

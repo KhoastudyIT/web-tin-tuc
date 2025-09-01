@@ -1,19 +1,55 @@
-import React from 'react';
-import { Container, Row, Col, Card, Table, Button, Badge, Alert } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Container, Row, Col, Card, Table, Button, Badge, Alert, Toast } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { newsService } from '../services/newsService';
-
+import { NewsItem, NewsItemCreate, NewsItemUpdate, NewsCategory } from '../types/news';
+import NewsFormModal from '../components/NewsFormModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import CategoryFormModal from '../components/CategoryFormModal';
+import CategoryDeleteModal from '../components/CategoryDeleteModal';
+import DebugPanel from '../components/DebugPanel';
+import './AdminPage.css';
 
 const AdminPage: React.FC = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // State cho các modal
+  const [showNewsForm, setShowNewsForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
+  const [deletingNews, setDeletingNews] = useState<NewsItem | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // State cho quản lý danh mục
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<NewsCategory | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<NewsCategory | null>(null);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+
+  // State cho thông báo
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState<'success' | 'danger'>('success');
 
   // Lấy danh sách tin tức
-  const { data: news = [], isLoading: newsLoading } = useQuery(
+  const { data: news = [], isLoading: newsLoading, refetch: refetchNews } = useQuery(
     'admin-news',
     () => newsService.getNews(undefined, 50, 0),
-    { enabled: !!user?.is_admin }
+    { 
+      enabled: !!user?.is_admin,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 phút
+      cacheTime: 10 * 60 * 1000 // 10 phút
+    }
   );
+
+  // Debug: Log khi news thay đổi
+  React.useEffect(() => {
+    console.log('News data updated:', news);
+  }, [news]);
 
   // Lấy danh sách danh mục
   const { data: categories = [], isLoading: categoriesLoading } = useQuery(
@@ -21,6 +57,188 @@ const AdminPage: React.FC = () => {
     () => newsService.getCategories(),
     { enabled: !!user?.is_admin }
   );
+
+  // Mutation để tạo tin tức mới
+  const createNewsMutation = useMutation({
+    mutationFn: (newsData: NewsItemCreate) => newsService.createNews(newsData),
+    onSuccess: (newNews) => {
+      // Invalidate tất cả các query liên quan đến tin tức
+      queryClient.invalidateQueries(['admin-news']);
+      queryClient.invalidateQueries(['news']);
+      queryClient.invalidateQueries(['latest-news']);
+      queryClient.invalidateQueries(['featured-news']);
+      
+      // Optimistic update - thêm tin tức mới vào cache ngay lập tức
+      queryClient.setQueryData(['admin-news'], (oldData: any) => {
+        if (oldData && Array.isArray(oldData)) {
+          // Chuyển đổi NewsItem thành NewsItemList để phù hợp với cache
+          const newsListItem = {
+            id: newNews.id,
+            title: newNews.title,
+            slug: newNews.slug,
+            summary: newNews.summary,
+            image_url: newNews.image_url,
+            author: newNews.author,
+            category: categories.find(cat => cat.id === newNews.category_id) || categories[0],
+            is_featured: newNews.is_featured,
+            is_published: newNews.is_published,
+            views_count: 0,
+            created_at: new Date().toISOString()
+          };
+          return [newsListItem, ...oldData];
+        }
+        return oldData;
+      });
+      
+      // Refetch để đảm bảo dữ liệu được cập nhật
+      setTimeout(() => {
+        refetchNews();
+      }, 100);
+      
+      showNotification('Thêm tin tức thành công!', 'success');
+    },
+    onError: (error) => {
+      console.error('Lỗi khi tạo tin tức:', error);
+      showNotification('Có lỗi xảy ra khi tạo tin tức!', 'danger');
+    }
+  });
+
+  // Mutation để cập nhật tin tức
+  const updateNewsMutation = useMutation({
+    mutationFn: ({ id, newsData }: { id: number; newsData: NewsItemUpdate }) => 
+      newsService.updateNews(id, newsData),
+    onSuccess: () => {
+      // Invalidate tất cả các query liên quan đến tin tức
+      queryClient.invalidateQueries(['admin-news']);
+      queryClient.invalidateQueries(['news']);
+      queryClient.invalidateQueries(['latest-news']);
+      queryClient.invalidateQueries(['featured-news']);
+      
+      // Refetch để đảm bảo dữ liệu được cập nhật
+      setTimeout(() => {
+        refetchNews();
+      }, 100);
+      
+      showNotification('Cập nhật tin tức thành công!', 'success');
+    },
+    onError: (error) => {
+      console.error('Lỗi khi cập nhật tin tức:', error);
+      showNotification('Có lỗi xảy ra khi cập nhật tin tức!', 'danger');
+    }
+  });
+
+  // Mutation để xóa tin tức
+  const deleteNewsMutation = useMutation({
+    mutationFn: (id: number) => newsService.deleteNews(id),
+    onSuccess: () => {
+      // Invalidate tất cả các query liên quan đến tin tức
+      queryClient.invalidateQueries(['admin-news']);
+      queryClient.invalidateQueries(['news']);
+      queryClient.invalidateQueries(['latest-news']);
+      queryClient.invalidateQueries(['featured-news']);
+      
+      // Refetch để đảm bảo dữ liệu được cập nhật
+      setTimeout(() => {
+        refetchNews();
+      }, 100);
+      
+      showNotification('Xóa tin tức thành công!', 'success');
+    },
+    onError: (error) => {
+      console.error('Lỗi khi xóa tin tức:', error);
+      showNotification('Có lỗi xảy ra khi xóa tin tức!', 'danger');
+    }
+  });
+
+  // Hiển thị thông báo
+  const showNotification = (message: string, variant: 'success' | 'danger') => {
+    setToastMessage(message);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
+
+  // Xử lý thêm tin tức mới
+  const handleAddNews = () => {
+    setIsEditing(false);
+    setEditingNews(null);
+    setShowNewsForm(true);
+  };
+
+  // Xử lý sửa tin tức
+  const handleEditNews = (news: NewsItem) => {
+    setIsEditing(true);
+    setEditingNews(news);
+    setShowNewsForm(true);
+  };
+
+  // Xử lý xóa tin tức
+  const handleDeleteNews = (news: NewsItem) => {
+    setDeletingNews(news);
+    setShowDeleteModal(true);
+  };
+
+  // Xử lý submit form
+  const handleSubmitNews = async (newsData: NewsItemCreate | NewsItemUpdate) => {
+    try {
+      if (isEditing && editingNews) {
+        console.log('Cập nhật tin tức:', { id: editingNews.id, data: newsData });
+        await updateNewsMutation.mutateAsync({ id: editingNews.id, newsData });
+      } else {
+        console.log('Tạo tin tức mới:', newsData);
+        await createNewsMutation.mutateAsync(newsData as NewsItemCreate);
+      }
+    } catch (error) {
+      console.error('Lỗi trong handleSubmitNews:', error);
+      showNotification('Có lỗi xảy ra khi xử lý tin tức!', 'danger');
+    }
+  };
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (deletingNews) {
+      await deleteNewsMutation.mutateAsync(deletingNews.id);
+      setShowDeleteModal(false);
+      setDeletingNews(null);
+    }
+  };
+
+  // Xử lý thêm danh mục mới
+  const handleAddCategory = () => {
+    setIsEditingCategory(false);
+    setEditingCategory(null);
+    setShowCategoryForm(true);
+  };
+
+  // Xử lý sửa danh mục
+  const handleEditCategory = (category: NewsCategory) => {
+    setIsEditingCategory(true);
+    setEditingCategory(category);
+    setShowCategoryForm(true);
+  };
+
+  // Xử lý xóa danh mục
+  const handleDeleteCategory = (category: NewsCategory) => {
+    setDeletingCategory(category);
+    setShowCategoryDeleteModal(true);
+  };
+
+  // Xử lý submit form danh mục
+  const handleSubmitCategory = async (categoryData: Partial<NewsCategory>) => {
+    // TODO: Implement category CRUD operations
+    console.log('Category data:', categoryData);
+    showNotification('Chức năng quản lý danh mục sẽ được phát triển sau!', 'success');
+  };
+
+  // Xử lý xác nhận xóa danh mục
+  const handleConfirmDeleteCategory = async () => {
+    if (deletingCategory) {
+      // TODO: Implement category deletion
+      console.log('Deleting category:', deletingCategory);
+      showNotification('Chức năng xóa danh mục sẽ được phát triển sau!', 'success');
+      setShowCategoryDeleteModal(false);
+      setDeletingCategory(null);
+    }
+  };
 
   // Kiểm tra quyền admin
   if (!user || !user.is_admin) {
@@ -55,6 +273,24 @@ const AdminPage: React.FC = () => {
         </h1>
         <p className="text-muted">Quản lý website tin tức</p>
       </div>
+
+      {/* Toast thông báo */}
+      <Toast 
+        show={showToast} 
+        onClose={() => setShowToast(false)}
+        delay={3000}
+        autohide
+        style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999 }}
+      >
+        <Toast.Header closeButton>
+          <strong className="me-auto">
+            {toastVariant === 'success' ? 'Thành công' : 'Lỗi'}
+          </strong>
+        </Toast.Header>
+        <Toast.Body className={toastVariant === 'success' ? 'text-success' : 'text-danger'}>
+          {toastMessage}
+        </Toast.Body>
+      </Toast>
 
       <Row>
         {/* Thống kê tổng quan */}
@@ -126,7 +362,7 @@ const AdminPage: React.FC = () => {
                 <span className="text-muted">
                   Hiển thị {news.length} tin tức gần nhất
                 </span>
-                <Button variant="success" size="sm">
+                <Button variant="success" size="sm" onClick={handleAddNews}>
                   <i className="fas fa-plus me-2"></i>
                   Thêm tin tức
                 </Button>
@@ -166,10 +402,19 @@ const AdminPage: React.FC = () => {
                         </td>
                         <td>{item.views_count}</td>
                         <td>
-                          <Button variant="outline-primary" size="sm" className="me-1">
+                          <Button 
+                            variant="outline-primary" 
+                            size="sm" 
+                            className="me-1"
+                            onClick={() => handleEditNews(item)}
+                          >
                             <i className="fas fa-edit"></i>
                           </Button>
-                          <Button variant="outline-danger" size="sm">
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm"
+                            onClick={() => handleDeleteNews(item)}
+                          >
                             <i className="fas fa-trash"></i>
                           </Button>
                         </td>
@@ -196,7 +441,7 @@ const AdminPage: React.FC = () => {
                 <span className="text-muted">
                   {categories.length} danh mục
                 </span>
-                <Button variant="success" size="sm">
+                <Button variant="success" size="sm" onClick={handleAddCategory}>
                   <i className="fas fa-plus me-2"></i>
                   Thêm danh mục
                 </Button>
@@ -220,10 +465,19 @@ const AdminPage: React.FC = () => {
                       <span className="fw-bold">{category.name}</span>
                     </div>
                     <div>
-                      <Button variant="outline-primary" size="sm" className="me-1">
+                      <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        className="me-1"
+                        onClick={() => handleEditCategory(category)}
+                      >
                         <i className="fas fa-edit"></i>
                       </Button>
-                      <Button variant="outline-danger" size="sm">
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category)}
+                      >
                         <i className="fas fa-trash"></i>
                       </Button>
                     </div>
@@ -264,8 +518,10 @@ const AdminPage: React.FC = () => {
                   <h6>Thông tin hệ thống</h6>
                   <ul className="list-unstyled">
                     <li><strong>Phiên bản:</strong> 1.0.0</li>
-                    <li><strong>Framework:</strong> React + FastAPI</li>
-                    <li><strong>Database:</strong> SQLite</li>
+                    <li><strong>Frontend:</strong> React + TypeScript</li>
+                    <li><strong>Backend:</strong> FastAPI + Python</li>
+                    <li><strong>API Base:</strong> http://localhost:8000</li>
+                    <li><strong>CORS Origins:</strong> localhost:3000, localhost:5173</li>
                     <li><strong>Thời gian hoạt động:</strong> 24/7</li>
                   </ul>
                 </Col>
@@ -274,6 +530,47 @@ const AdminPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal thêm/sửa tin tức */}
+      <NewsFormModal
+        show={showNewsForm}
+        onHide={() => setShowNewsForm(false)}
+        onSubmit={handleSubmitNews}
+        news={editingNews}
+        categories={categories}
+        isEditing={isEditing}
+      />
+
+      {/* Modal xác nhận xóa */}
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        news={deletingNews}
+        isDeleting={deleteNewsMutation.isLoading}
+      />
+
+      {/* Modal thêm/sửa danh mục */}
+      <CategoryFormModal
+        show={showCategoryForm}
+        onHide={() => setShowCategoryForm(false)}
+        onSubmit={handleSubmitCategory}
+        category={editingCategory}
+        isEditing={isEditingCategory}
+      />
+
+      {/* Modal xác nhận xóa danh mục */}
+      <CategoryDeleteModal
+        show={showCategoryDeleteModal}
+        onHide={() => setShowCategoryDeleteModal(false)}
+        onConfirm={handleConfirmDeleteCategory}
+        category={deletingCategory}
+        isDeleting={false}
+        newsCount={news.filter(item => item.category.id === deletingCategory?.id).length}
+      />
+
+      {/* Debug Panel - chỉ hiển thị trong development */}
+      {process.env.NODE_ENV === 'development' && <DebugPanel />}
     </Container>
   );
 };
