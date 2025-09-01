@@ -30,6 +30,14 @@ async def get_featured_news(
     """Lấy tin tức nổi bật"""
     return news_service.get_featured_news(db, limit=limit)
 
+@news_router.get("/popular", response_model=List[NewsItemResponse])
+async def get_popular_news(
+    limit: int = Query(5, ge=1, le=20),
+    db: Session = Depends(get_db)
+):
+    """Lấy tin tức phổ biến"""
+    return news_service.get_popular_news(db, limit=limit)
+
 @news_router.get("/categories", response_model=List[NewsCategoryResponse])
 async def get_categories(db: Session = Depends(get_db)):
     """Lấy danh sách danh mục"""
@@ -43,6 +51,30 @@ async def get_news_by_category(
 ):
     """Lấy tin tức theo danh mục"""
     return news_service.get_news_by_category(db, category_slug, limit)
+
+@news_router.get("/search", response_model=List[NewsItemResponse])
+async def search_news(
+    q: str = Query(..., description="Từ khóa tìm kiếm"),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Tìm kiếm tin tức theo từ khóa"""
+    if not q or len(q.strip()) < 2:
+        raise HTTPException(status_code=422, detail="Từ khóa tìm kiếm phải có ít nhất 2 ký tự")
+    
+    return news_service.search_news(db, q.strip(), limit)
+
+@news_router.get("/slug/{slug}", response_model=NewsItemResponse)
+async def get_news_by_slug(slug: str, db: Session = Depends(get_db)):
+    """Lấy tin tức theo slug"""
+    news = news_service.get_news_by_slug(db, slug)
+    if not news:
+        raise HTTPException(status_code=404, detail="News not found")
+    
+    # Tăng lượt xem
+    news_service.increment_views(db, news.id)
+    
+    return news
 
 @news_router.get("/{news_id}", response_model=NewsItemResponse)
 async def get_news_by_id(news_id: int, db: Session = Depends(get_db)):

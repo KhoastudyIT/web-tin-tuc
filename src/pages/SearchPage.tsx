@@ -1,39 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Breadcrumb, Form, Button } from 'react-bootstrap';
-import { mockDataService } from '../services/mockDataService';
+import { Container, Row, Col, Card, Badge, Breadcrumb, Form, Button, Spinner, Alert } from 'react-bootstrap';
+import { useQuery } from 'react-query';
+import { newsService } from '../services/newsService';
 import NewsCard from '../components/NewsCard';
 import { NewsItemList } from '../types/news';
 
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<NewsItemList[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   const query = searchParams.get('q') || '';
+
+  // Sử dụng React Query để search
+  const { 
+    data: searchResults = [], 
+    isLoading: isSearching, 
+    error: searchError,
+    refetch: refetchSearch
+  } = useQuery(
+    ['search-news', query], 
+    () => query ? newsService.searchNews(query, 20) : Promise.resolve([]),
+    { 
+      enabled: !!query,
+      refetchOnWindowFocus: false,
+      staleTime: 1 * 60 * 1000, // 1 phút
+      cacheTime: 5 * 60 * 1000  // 5 phút
+    }
+  );
 
   useEffect(() => {
     if (query) {
       setSearchQuery(query);
-      performSearch(query);
     }
   }, [query]);
-
-  const performSearch = (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    // Simulate search delay
-    setTimeout(() => {
-      const results = mockDataService.searchNews(query, 20);
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 500);
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +41,14 @@ const SearchPage: React.FC = () => {
       setSearchParams({ q: searchQuery.trim() });
     }
   };
+
+  // Debug: Log dữ liệu để kiểm tra
+  React.useEffect(() => {
+    console.log('🔍 SearchPage - Query:', query);
+    console.log('🔍 SearchPage - Results:', searchResults);
+    console.log('🔍 SearchPage - Loading:', isSearching);
+    console.log('🔍 SearchPage - Error:', searchError);
+  }, [query, searchResults, isSearching, searchError]);
 
   return (
     <Container className="py-4">
@@ -93,11 +101,19 @@ const SearchPage: React.FC = () => {
       </div>
 
       {/* Search Results */}
-      {isSearching ? (
+      {searchError ? (
+        <Alert variant="danger">
+          <Alert.Heading>Có lỗi xảy ra khi tìm kiếm</Alert.Heading>
+          <p>Không thể thực hiện tìm kiếm. Vui lòng thử lại sau.</p>
+          <p className="mb-0">
+            <small>Chi tiết: {(searchError as any)?.message}</small>
+          </p>
+        </Alert>
+      ) : isSearching ? (
         <div className="text-center py-5">
-          <div className="spinner-border" role="status">
+          <Spinner animation="border" role="status" variant="primary">
             <span className="visually-hidden">Đang tìm kiếm...</span>
-          </div>
+          </Spinner>
           <p className="mt-3 text-muted">Đang tìm kiếm tin tức...</p>
         </div>
       ) : query ? (

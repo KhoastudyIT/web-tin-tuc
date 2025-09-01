@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Breadcrumb } from 'react-bootstrap';
-import { mockDataService } from '../services/mockDataService';
+import { Container, Row, Col, Card, Badge, Breadcrumb, Spinner, Alert } from 'react-bootstrap';
+import { useQuery } from 'react-query';
+import { newsService } from '../services/newsService';
 import { NewsItem } from '../types/news';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -9,9 +10,60 @@ import { vi } from 'date-fns/locale';
 const NewsDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
-  // Lấy tin tức từ mock data
-  const news = slug ? mockDataService.getNewsBySlug(slug) : undefined;
+  // Lấy tin tức từ API thật
+  const { 
+    data: news, 
+    isLoading, 
+    error 
+  } = useQuery(
+    ['news-detail', slug], 
+    () => slug ? newsService.getNewsBySlug(slug) : null,
+    { 
+      enabled: !!slug,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 phút
+      cacheTime: 10 * 60 * 1000  // 10 phút
+    }
+  );
 
+  // Debug: Log dữ liệu để kiểm tra - PHẢI ĐỂ TRƯỚC CÁC CONDITIONAL RETURN
+  React.useEffect(() => {
+    console.log('📰 NewsDetailPage - Slug:', slug);
+    console.log('📰 NewsDetailPage - News:', news);
+    console.log('📰 NewsDetailPage - Loading:', isLoading);
+    console.log('📰 NewsDetailPage - Error:', error);
+  }, [slug, news, isLoading, error]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Container className="py-5">
+        <div className="text-center">
+          <Spinner animation="border" role="status" variant="primary">
+            <span className="visually-hidden">Đang tải...</span>
+          </Spinner>
+          <p className="mt-3 text-muted">Đang tải tin tức...</p>
+        </div>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Container className="py-5">
+        <Alert variant="danger">
+          <Alert.Heading>Có lỗi xảy ra</Alert.Heading>
+          <p>Không thể tải tin tức. Vui lòng thử lại sau.</p>
+          <p className="mb-0">
+            <small>Chi tiết: {(error as any)?.message}</small>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+
+  // Not found state
   if (!news) {
     return (
       <Container className="py-5">

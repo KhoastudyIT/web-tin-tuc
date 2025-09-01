@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Card, Button, Badge, Accordion } from 'react-bootstrap';
 import { useQueryClient } from 'react-query';
-import { debugAPI, testAPIEndpoints, checkBackendStatus } from '../utils/debugUtils';
+import { debugAPI } from '../utils/debugUtils';
+import { testBackendConnection, testGetNews, runAllTests } from '../utils/testAPI';
 
 const DebugPanel: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -9,12 +10,16 @@ const DebugPanel: React.FC = () => {
   const queryClient = useQueryClient();
 
   const handleTestAPI = async () => {
-    await testAPIEndpoints();
+    await testGetNews();
   };
 
   const handleCheckBackend = async () => {
-    const status = await checkBackendStatus();
-    setBackendStatus(status);
+    const result = await testBackendConnection();
+    setBackendStatus(result.success);
+  };
+
+  const handleRunAllTests = async () => {
+    await runAllTests();
   };
 
   const getCacheInfo = () => {
@@ -81,6 +86,9 @@ const DebugPanel: React.FC = () => {
             </Button>
             <Button size="sm" onClick={handleTestAPI}>
               Test API
+            </Button>
+            <Button size="sm" onClick={handleRunAllTests} variant="outline-warning">
+              Run All Tests
             </Button>
           </div>
           {backendStatus !== null && (

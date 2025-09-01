@@ -64,9 +64,12 @@ const AdminPage: React.FC = () => {
     onSuccess: (newNews) => {
       // Invalidate tất cả các query liên quan đến tin tức
       queryClient.invalidateQueries(['admin-news']);
-      queryClient.invalidateQueries(['news']);
       queryClient.invalidateQueries(['latest-news']);
       queryClient.invalidateQueries(['featured-news']);
+      queryClient.invalidateQueries(['popular-news']);
+      queryClient.invalidateQueries(['category-news']);
+      queryClient.invalidateQueries(['search-news']);
+      queryClient.invalidateQueries(['news-detail']);
       
       // Optimistic update - thêm tin tức mới vào cache ngay lập tức
       queryClient.setQueryData(['admin-news'], (oldData: any) => {
@@ -110,9 +113,12 @@ const AdminPage: React.FC = () => {
     onSuccess: () => {
       // Invalidate tất cả các query liên quan đến tin tức
       queryClient.invalidateQueries(['admin-news']);
-      queryClient.invalidateQueries(['news']);
       queryClient.invalidateQueries(['latest-news']);
       queryClient.invalidateQueries(['featured-news']);
+      queryClient.invalidateQueries(['popular-news']);
+      queryClient.invalidateQueries(['category-news']);
+      queryClient.invalidateQueries(['search-news']);
+      queryClient.invalidateQueries(['news-detail']);
       
       // Refetch để đảm bảo dữ liệu được cập nhật
       setTimeout(() => {
@@ -133,9 +139,12 @@ const AdminPage: React.FC = () => {
     onSuccess: () => {
       // Invalidate tất cả các query liên quan đến tin tức
       queryClient.invalidateQueries(['admin-news']);
-      queryClient.invalidateQueries(['news']);
       queryClient.invalidateQueries(['latest-news']);
       queryClient.invalidateQueries(['featured-news']);
+      queryClient.invalidateQueries(['popular-news']);
+      queryClient.invalidateQueries(['category-news']);
+      queryClient.invalidateQueries(['search-news']);
+      queryClient.invalidateQueries(['news-detail']);
       
       // Refetch để đảm bảo dữ liệu được cập nhật
       setTimeout(() => {

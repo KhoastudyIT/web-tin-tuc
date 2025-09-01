@@ -70,3 +70,18 @@ class NewsService:
     def get_categories(self, db: Session) -> List[NewsCategory]:
         """Lấy danh sách categories"""
         return db.query(NewsCategory).all()
+    
+    def search_news(self, db: Session, query: str, limit: int = 20) -> List[NewsItem]:
+        """Tìm kiếm news theo từ khóa"""
+        search_term = f"%{query}%"
+        return db.query(NewsItem).filter(
+            NewsItem.is_published == True,
+            (NewsItem.summary.ilike(search_term) |
+             NewsItem.content.ilike(search_term))
+        ).order_by(desc(NewsItem.created_at)).limit(limit).all()
+    
+    def get_popular_news(self, db: Session, limit: int = 5) -> List[NewsItem]:
+        """Lấy news phổ biến theo lượt xem"""
+        return db.query(NewsItem).filter(
+            NewsItem.is_published == True
+        ).order_by(desc(NewsItem.views_count)).limit(limit).all()

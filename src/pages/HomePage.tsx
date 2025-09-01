@@ -1,16 +1,56 @@
 import React from 'react';
-import { Container, Row, Col, Card, Badge } from 'react-bootstrap';
-import { mockDataService } from '../services/mockDataService';
+import { Container, Row, Col, Card, Badge, Spinner, Alert } from 'react-bootstrap';
+import { useQuery } from 'react-query';
+import { newsService } from '../services/newsService';
 import { NewsItemList } from '../types/news';
 import NewsCard from '../components/NewsCard';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 const HomePage: React.FC = () => {
-  // Lấy tin tức từ mock data
-  const featuredNews = mockDataService.getFeaturedNews(5);
-  const latestNews = mockDataService.getLatestNews(10);
-  const popularNews = mockDataService.getPopularNews(5);
+  // Lấy tin tức từ API thật
+  const { 
+    data: featuredNews = [], 
+    isLoading: featuredLoading, 
+    error: featuredError 
+  } = useQuery(['featured-news'], () => newsService.getFeaturedNews(5), {
+    refetchOnWindowFocus: false,
+    staleTime: 2 * 60 * 1000, // 2 phút
+    cacheTime: 5 * 60 * 1000  // 5 phút
+  });
+
+  const { 
+    data: latestNews = [], 
+    isLoading: latestLoading, 
+    error: latestError 
+  } = useQuery(['latest-news'], () => newsService.getLatestNews(10), {
+    refetchOnWindowFocus: false,
+    staleTime: 1 * 60 * 1000, // 1 phút
+    cacheTime: 3 * 60 * 1000  // 3 phút
+  });
+
+  const { 
+    data: popularNews = [], 
+    isLoading: popularLoading, 
+    error: popularError 
+  } = useQuery(['popular-news'], () => newsService.getPopularNews(5), {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 phút
+    cacheTime: 10 * 60 * 1000 // 10 phút
+  });
+
+  // Debug: Log dữ liệu để kiểm tra
+  React.useEffect(() => {
+    console.log('🏠 HomePage - Featured News:', featuredNews);
+    console.log('🏠 HomePage - Latest News:', latestNews);
+    console.log('🏠 HomePage - Popular News:', popularNews);
+    console.log('🏠 HomePage - Featured Loading:', featuredLoading);
+    console.log('🏠 HomePage - Latest Loading:', latestLoading);
+    console.log('🏠 HomePage - Popular Loading:', popularLoading);
+    console.log('🏠 HomePage - Featured Error:', featuredError);
+    console.log('🏠 HomePage - Latest Error:', latestError);
+    console.log('🏠 HomePage - Popular Error:', popularError);
+  }, [featuredNews, latestNews, popularNews, featuredLoading, latestLoading, popularLoading, featuredError, latestError, popularError]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -23,10 +63,39 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // Loading state
+  if (featuredLoading || latestLoading || popularLoading) {
+    return (
+      <Container className="py-5">
+        <div className="text-center">
+          <Spinner animation="border" role="status" variant="primary">
+            <span className="visually-hidden">Đang tải...</span>
+          </Spinner>
+          <p className="mt-3 text-muted">Đang tải tin tức...</p>
+        </div>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (featuredError || latestError || popularError) {
+    return (
+      <Container className="py-5">
+        <Alert variant="danger">
+          <Alert.Heading>Có lỗi xảy ra</Alert.Heading>
+          <p>Không thể tải tin tức. Vui lòng thử lại sau.</p>
+          <p className="mb-0">
+            <small>Chi tiết: {(featuredError as any)?.message || (latestError as any)?.message || (popularError as any)?.message}</small>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-4">
       {/* Tin tức nổi bật */}
-      {featuredNews.length > 0 && (
+      {featuredNews && featuredNews.length > 0 && (
         <section className="mb-5">
           <h2 className="mb-4 fw-bold text-primary">
             <i className="fas fa-star me-2"></i>
@@ -106,7 +175,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Tin tức phổ biến */}
-      {popularNews.length > 0 && (
+      {popularNews && popularNews.length > 0 && (
         <section className="mb-5">
           <h2 className="mb-4 fw-bold text-danger">
             <i className="fas fa-fire me-2"></i>

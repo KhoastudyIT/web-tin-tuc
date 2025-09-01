@@ -1,17 +1,81 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Breadcrumb } from 'react-bootstrap';
-import { mockDataService } from '../services/mockDataService';
+import { Container, Row, Col, Card, Badge, Breadcrumb, Spinner, Alert } from 'react-bootstrap';
+import { useQuery } from 'react-query';
+import { newsService } from '../services/newsService';
 import NewsCard from '../components/NewsCard';
 import { Link } from 'react-router-dom';
 
 const CategoryPage: React.FC = () => {
   const { category } = useParams<{ category: string }>();
 
-  // Lấy dữ liệu từ mock data
-  const news = category ? mockDataService.getNewsByCategory(category, 20) : [];
-  const categories = mockDataService.getAllCategories();
+  // Lấy dữ liệu từ API thật
+  const { 
+    data: news = [], 
+    isLoading: newsLoading, 
+    error: newsError 
+  } = useQuery(
+    ['category-news', category], 
+    () => category ? newsService.getNewsByCategory(category, 20) : Promise.resolve([]),
+    { 
+      enabled: !!category,
+      refetchOnWindowFocus: false,
+      staleTime: 2 * 60 * 1000, // 2 phút
+      cacheTime: 5 * 60 * 1000  // 5 phút
+    }
+  );
+
+  const { 
+    data: categories = [], 
+    isLoading: categoriesLoading 
+  } = useQuery(
+    ['categories'], 
+    () => newsService.getCategories(),
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 10 * 60 * 1000, // 10 phút
+      cacheTime: 20 * 60 * 1000  // 20 phút
+    }
+  );
+
   const currentCategory = categories.find(cat => cat.slug === category);
+
+  // Debug: Log dữ liệu để kiểm tra
+  React.useEffect(() => {
+    console.log('📁 CategoryPage - Category:', category);
+    console.log('📁 CategoryPage - News:', news);
+    console.log('📁 CategoryPage - Categories:', categories);
+    console.log('📁 CategoryPage - Current Category:', currentCategory);
+  }, [category, news, categories, currentCategory]);
+
+  // Loading state
+  if (newsLoading || categoriesLoading) {
+    return (
+      <Container className="py-5">
+        <div className="text-center">
+          <Spinner animation="border" role="status" variant="primary">
+            <span className="visually-hidden">Đang tải...</span>
+          </Spinner>
+          <p className="mt-3 text-muted">Đang tải tin tức...</p>
+        </div>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (newsError) {
+    return (
+      <Container className="py-5">
+        <Alert variant="danger">
+          <Alert.Heading>Có lỗi xảy ra</Alert.Heading>
+          <p>Không thể tải tin tức. Vui lòng thử lại sau.</p>
+          <p className="mb-0">
+            <small>Chi tiết: {(newsError as any)?.message}</small>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container className="py-4">
